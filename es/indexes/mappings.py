@@ -2,6 +2,8 @@ MAPPINGS = {
     "_routing": {"required": True},
     "properties": {
         "uid": {"type": "keyword"},
+        "source_type": {"type": "keyword"},
+        "source_id": {"type": "long"},
 
         "name": {"type": "text"},
         "street": {
@@ -19,7 +21,7 @@ MAPPINGS = {
             }
         },
         "postcode": {"type": "keyword"},
-        "city_name": {
+        "city": {
             "type": "text",
             "fields": {"keyword": {"type": "keyword"}}
         },

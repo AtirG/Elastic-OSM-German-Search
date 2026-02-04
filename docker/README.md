@@ -6,21 +6,36 @@ This directory contains the configurations for running the necessary services us
 
 The search engine is powered by Elasticsearch. We use a single-node configuration for development.
 
-### Deployment
+## Deployment
 
-To start the Elasticsearch container:
+The search infrastructure is managed via the root-level `docker-compose.yml`. Follow these steps for a clean deployment:
 
+### 1. Start Elasticsearch
 ```bash
-cd docker/elasticsearch
-docker compose up -d
+docker compose up -d elasticsearch
 ```
+Wait for the service to start. Verify at [http://localhost:9200](http://localhost:9200).
 
-### Configuration
-- **Image**: `elasticsearch:8.15.0`
-- **Port**: `9200` (Mapping: `9200:9200`)
-- **Security**: Disabled for local development (`xpack.security.enabled=false`)
-- **Persistence**: Data is stored in the Docker volume `es_data`.
-- **Custom Config**: `./elasticsearch.yml` is mounted to the container.
+### 2. Initialize Index Schema
+Run the initialization container to create indices and aliases:
+```bash
+docker compose up es_init
+```
+**Verification Commands:**
+- Indices: `curl "http://localhost:9200/_cat/indices?v"`
+- Aliases: `curl "http://localhost:9200/_cat/aliases?v"`
+- Mappings: `curl "http://localhost:9200/osm_addresses_de_v1/_mapping?pretty"`
+
+### 3. Start Logstash Ingestion
+Ensure your `data/processed/final_addresses.csv` is correctly prepared, then:
+```bash
+docker compose up -d logstash
+```
+**Monitor Ingestion Progress:**
+```bash
+curl "http://localhost:9200/osm_addresses_global/_count"
+```
+The ingestion typically takes ~30 minutes for the full Germany dataset.
 
 ### Health Check
 

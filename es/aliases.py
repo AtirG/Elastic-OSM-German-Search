@@ -1,7 +1,23 @@
 from es.client import es
 from es.indexes.osm_addresses_de import INDEX_NAME,INDEX_BODY
+import time
 
 GLOBAL_ALIAS = "osm_addresses_global"
+
+def wait_for_es(timeout=60):
+    start = time.time()
+    while True:
+        try:
+            if es.ping():
+                print("Elasticsearch is ready")
+                return
+        except ConnectionError:
+            pass
+
+        if time.time() - start > timeout:
+            raise RuntimeError("Elasticsearch not ready in time")
+
+        time.sleep(2)
 
 
 def create_index():
@@ -27,5 +43,6 @@ def create_global_alias():
 
 
 if __name__ == "__main__":
+    wait_for_es()
     create_index()
     create_global_alias()

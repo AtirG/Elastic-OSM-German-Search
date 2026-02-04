@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: osm_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  es_init:
+    image: python:3.11-slim
+    container_name: osm_es_init
+    depends_on:
+      - elasticsearch
+    volumes:
+      - .:/app
+    working_dir: /app
+    environment:
+      - PYTHONPATH=/app
+    command: >
+      sh -c "
+      pip install -r requirements.txt &&
+      python es/aliases.py
+      "
+    restart: "no"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.15.0
+    container_name: osm_logstash
+    depends_on:
+      - es_init
+    volumes:
+        # - ./data/processed/sample.csv:/data/sample.csv:ro
+      - ./data/processed/final_addresses.csv:/data/final_addresses.csv:ro
+
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    restart: unless-stopped
+
+volumes:
+  es_data:

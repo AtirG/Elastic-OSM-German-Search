@@ -114,6 +114,7 @@ def load_final_addresses() -> pl.DataFrame:
             "display_address": pl.String,
 
             "is_full_address": pl.Boolean,
+            "merged_address": pl.String,
         },
     )
 

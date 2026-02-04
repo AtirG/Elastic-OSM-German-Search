@@ -2,50 +2,89 @@
 
 This project extracts and processes OSM data for address searching in Germany.
 
-## Pipeline Workflow
+## Data Pipeline Workflow
 
-### Phase 1: Extraction
-Extract data from OSM PBF files into raw CSVs.
+The build process follows a strict sequence to transform raw OSM data into a search-ready dataset.
+
+### Step 1: Extraction
+Extract 3 core files from the German OSM PBF into raw CSVs.
 ```bash
 python pipeline/extract/01_extract_osm.py data/germany-latest.osm.pbf
 python pipeline/extract/02_extract_places_buildings.py data/germany-latest.osm.pbf
 ```
-- **Output**: `cities.csv`, `streets.csv`, `addresses.csv`
+- **Outputs**: `cities.csv`, `streets.csv`, `addresses.csv`.
 
-### Phase 2: Cleaning
-Clean and normalize each domain separately.
-- **Cities**: Filter invalid names/coords, normalize characters.
-- **Streets**: Filter invalid names/coords.
-- **Addresses**: Filter invalid coords, split house number lists/ranges, validate postal codes.
+### Step 2: Cleaning
+Load the raw CSVs into Polars for high-performance cleaning and normalization.
+Follow the cleaning instructions for each domain in this specific order:
+1. **Addresses**: Normalize house numbers and filter invalid coordinates ([README](pipeline/clean/addresses/)).
+2. **Cities**: Filter and normalize city names.
+3. **Streets**: Clean street names and validate geometry.
 
-### Phase 3: Merging & Processing
-Consolidate the cleaned domains into a unified dataset for indexing.
-- **Process**: Align all sources to a common schema.
-- **Enrichment**: Add classification flags (`is_city`, `is_street`, `is_place`).
+### Step 3: Merging
+Consolidate the three cleaned domains into a single, unified Polars DataFrame.
+- **Location**: `pipeline/process/merging/`
+- **Goal**: Align all sources to a common schema with a unique `uid`.
 
-### Phase 4: Geo-Enrichment (Postcodes)
-Backfill missing postcodes using spatial lookups.
-- **Process**: Export rows without postcodes, perform point-in-polygon joins with PLZ polygons, and re-merge.
-- **Cleanup**: Remove any remaining entries outside valid postcode boundaries.
+### Step 4: Postcode Geo-Enrichment
+Fix rows missing postal codes using spatial lookups.
+1. **Flat CSV Export**: Export the merged dataset to a CSV, dropping the geometry `location` column to keep it flat.
+2. **Spatial Join**: Run `postcode_enrichment.py` to perform point-in-polygon joins with Germany's PLZ polygons.
+3. **Re-Merge**: Re-import the enriched postcodes back into the main Polars pipeline.
 
+### Step 5: Final Feature Engineering
+Apply the final transformations in `pipeline/process/final/` to create the search-ready dataset.
+This step adds the necessary columns for display and "search as you type" functionality.
 
-### Phase 5: Feature Engineering & Final Prep
-Prepare the consolidated dataset for indexing and display.
-- **Process**: Add display columns, consolidate search fields, and apply final business rules.
+**Final Dataset Schema:**
+`uid, source_type, source_id, name, street, housenumber, postcode, city, lat, lon, is_city, is_street, is_place, country_code, country_name, display_address, is_full_address, merged_address`
 
 ---
 
-## Infrastructure
+## Infrastructure & Data Indexing
 
-The project uses Docker to manage external services like Elasticsearch.
+---
 
-1. **Service**: Elasticsearch 8.15.0
-2. **Setup**:
-   ```bash
-   cd docker/elasticsearch
-   docker compose up -d
-   ```
-   *Detailed documentation can be found in the [Docker README](docker/README.md).*
+## Infrastructure & Data Indexing
+
+The project uses Docker to manage the search infrastructure and data ingestion. The indexing process is performed in sequential steps.
+
+### Step 1: Start Elasticsearch
+Start only the Elasticsearch service and wait for it to become healthy.
+```bash
+docker compose up -d elasticsearch
+```
+**Verify Health:**
+```bash
+curl "http://localhost:9200"
+```
+
+### Step 2: Initialize Indices & Aliases
+Once Elasticsearch is live, run the initialization service to create the required indices and aliases.
+```bash
+docker compose up es_init
+```
+**Verify Indices & Aliases:**
+```bash
+curl "http://localhost:9200/_cat/indices?v"
+curl "http://localhost:9200/_cat/aliases?v"
+```
+Expect to see `osm_addresses_de_v1` and the alias `osm_addresses_global` pointing to it. You can also check mappings with:
+```bash
+curl "http://localhost:9200/osm_addresses_de_v1/_mapping?pretty"
+```
+
+### Step 3: Start Data Ingestion (Logstash)
+Ensure `data/processed/final_addresses.csv` is ready, then start Logstash.
+```bash
+docker compose up -d logstash
+```
+The ingestion process takes approximately 30 minutes for the full German dataset.
+
+**Monitor Progress:**
+```bash
+curl "http://localhost:9200/osm_addresses_global/_count"
+```
 
 ---
 
@@ -55,5 +94,7 @@ The project uses Docker to manage external services like Elasticsearch.
     - [Merging](pipeline/process/merging/): Unified dataset building.
     - [Enrichment](pipeline/process/enrichment/): Spatial postcode backfilling.
     - [Final](pipeline/process/final/): Feature engineering and display formatting.
-- [docker/](docker/): Docker and service configurations.
+- `es/`: Elasticsearch client and index management scripts.
+- `logstash/`: Logstash pipeline configuration for indexing.
+- `docker/`: Additional service-specific configurations.
 
