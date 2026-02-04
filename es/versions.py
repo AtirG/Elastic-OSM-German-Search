@@ -1,0 +1,1 @@
+ES_CLIENT_MAJOR = 8

@@ -108,12 +108,12 @@ def load_final_addresses() -> pl.DataFrame:
             "is_city": pl.Boolean,
             "is_street": pl.Boolean,
             "is_place": pl.Boolean,
-            "is_full_address": pl.Boolean,
 
             "country_code": pl.String,
             "country_name": pl.String,
-
             "display_address": pl.String,
+
+            "is_full_address": pl.Boolean,
         },
     )
 

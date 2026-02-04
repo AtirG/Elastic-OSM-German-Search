@@ -28,9 +28,24 @@ Backfill missing postcodes using spatial lookups.
 - **Process**: Export rows without postcodes, perform point-in-polygon joins with PLZ polygons, and re-merge.
 - **Cleanup**: Remove any remaining entries outside valid postcode boundaries.
 
+
 ### Phase 5: Feature Engineering & Final Prep
 Prepare the consolidated dataset for indexing and display.
 - **Process**: Add display columns, consolidate search fields, and apply final business rules.
+
+---
+
+## Infrastructure
+
+The project uses Docker to manage external services like Elasticsearch.
+
+1. **Service**: Elasticsearch 8.15.0
+2. **Setup**:
+   ```bash
+   cd docker/elasticsearch
+   docker compose up -d
+   ```
+   *Detailed documentation can be found in the [Docker README](docker/README.md).*
 
 ---
 
@@ -40,4 +55,5 @@ Prepare the consolidated dataset for indexing and display.
     - [Merging](pipeline/process/merging/): Unified dataset building.
     - [Enrichment](pipeline/process/enrichment/): Spatial postcode backfilling.
     - [Final](pipeline/process/final/): Feature engineering and display formatting.
+- [docker/](docker/): Docker and service configurations.
 

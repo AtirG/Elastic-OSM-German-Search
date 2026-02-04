@@ -1,0 +1,7 @@
+cluster.name: osm-cluster
+node.name: osm-node-1
+
+network.host: 0.0.0.0
+http.port: 9200
+
+action.auto_create_index: false
