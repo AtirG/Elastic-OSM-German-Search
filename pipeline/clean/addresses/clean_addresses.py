@@ -32,9 +32,8 @@ def add_is_place(addresses: pl.DataFrame) -> pl.DataFrame:
         (
             pl.col("name").is_not_null() &
             (pl.col("name").str.len_chars() > 0)
-        ).alias("is_place")
+        ).cast(pl.Int8).alias("is_place")
     )
-
 
 def explode_housenumber_lists(addresses: pl.DataFrame) -> pl.DataFrame:
     return (
@@ -67,55 +66,57 @@ def explode_housenumber_lists(addresses: pl.DataFrame) -> pl.DataFrame:
 
 
 def expand_housenumber_range(value: str) -> list[str]:
+    if not isinstance(value, str) or not value:
+        return []
+
     value = value.lower().replace(" ", "")
 
-    # case: space-separated tokens like "48a46b" already cleaned → skip
     if "-" not in value:
         return [value]
 
     start, end = value.split("-", 1)
 
-    # 16a-16e
-    if start[:-1].isdigit() and end[:-1].isdigit() is False and start[:-1] == end[:-1]:
-        base = start[:-1]
-        s_letter = start[-1]
-        e_letter = end[-1]
+    if start[:-1].isdigit() and end[:-1].isdigit() and start[:-1] == end[:-1]:
+        s_letter, e_letter = start[-1], end[-1]
         if s_letter in string.ascii_lowercase and e_letter in string.ascii_lowercase:
-            return [f"{base}{c}" for c in string.ascii_lowercase[
-                string.ascii_lowercase.index(s_letter):
-                string.ascii_lowercase.index(e_letter) + 1
-            ]]
+            base = start[:-1]
+            return [
+                f"{base}{c}"
+                for c in string.ascii_lowercase[
+                    string.ascii_lowercase.index(s_letter):
+                    string.ascii_lowercase.index(e_letter) + 1
+                ]
+            ]
 
-    # 106-108
     if start.isdigit() and end.isdigit():
         s, e = int(start), int(end)
-        if e - s <= 20:  # safety guard
+        if e - s <= 20:
             return [str(i) for i in range(s, e + 1)]
 
     return [value]
 
 
-def explode_housenumber_ranges(addresses: pl.DataFrame) -> pl.DataFrame:
+#we run only this. it has the other nested inside
+def expand_housenumber_ranges_df(
+    df: pl.DataFrame,
+    column: str = "housenumber",
+) -> pl.DataFrame:
     return (
-        addresses
+        df
         .with_columns(
-            pl.when(
-                pl.col("housenumber").is_not_null() &
-                pl.col("housenumber").str.contains("-")
-            )
-            .then(
-                pl.col("housenumber")
-                .map_elements(expand_housenumber_range)
-            )
-            .otherwise(pl.concat_list([pl.col("housenumber")]))
-            .alias("housenumber_split")
+            pl.col(column)
+              .map_elements(expand_housenumber_range)
+              .alias("_hn_split")
         )
-        .explode("housenumber_split")
+        .explode("_hn_split")
         .with_columns(
-            pl.col("housenumber_split").alias("housenumber")
+            pl.col("_hn_split").alias(column)
         )
-        .drop("housenumber_split")
+        .drop("_hn_split")
     )
+
+
+
 
 
 def nullify_too_long_housenumbers(addresses: pl.DataFrame) -> pl.DataFrame:
@@ -124,7 +125,7 @@ def nullify_too_long_housenumbers(addresses: pl.DataFrame) -> pl.DataFrame:
             pl.col("housenumber").is_not_null() &
             (pl.col("housenumber").str.len_chars() > 20)
         )
-        .then(None)
+        .then(pl.lit(None, dtype=pl.Utf8))
         .otherwise(pl.col("housenumber"))
         .alias("housenumber")
     )

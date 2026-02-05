@@ -31,3 +31,28 @@ def search_addresses(raw_q: str):
     results = parse_es_hits(hits)
 
     return results
+
+
+
+
+
+# Console check:
+
+def interactive_search():
+    import os
+
+    while True:
+        q = input("search> ").strip()
+        if not q:
+            break
+
+        os.system("clear")
+        print(f"Query: {q}\n")
+
+        results = search_addresses(q)
+
+        for r in results:
+            print(
+                f"{r.get('source_type')} | "
+                f"{r.get('display_address')}"
+            )

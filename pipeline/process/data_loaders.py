@@ -62,11 +62,33 @@ def load_postcode_enriched():
         }
     ).select(["uid", "postcode_enriched"])
 
+def load_admin_enriched():
+    return pl.read_csv(
+        "data/processed/admin_enriched.csv",
+        schema={
+            "uid": pl.String,
+            "admin4_name": pl.String,
+            "admin6_name": pl.String,
+            "admin8_name": pl.String,
+        }
+    )
 
+def load_geo_enriched():
+    return pl.read_csv(
+        "data/processed/geo_enriched.csv",
+        schema={
+            "uid": pl.String,
+            "postcode": pl.String,
+            "postcode_enriched": pl.String,
+            "admin4_name": pl.String,
+            "admin6_name": pl.String,
+            "admin8_name": pl.String,
+        }
+    )
 
 def load_merged_dataset():
     return pl.read_csv(
-        "pipeline/process/merged_dataset.csv",
+        "data/processed/merged_dataset.csv",
         schema={
             "uid": pl.String,
             "source_type": pl.String,

@@ -12,14 +12,13 @@ def build_merged_dataset(cities, streets, addresses):
         pl.lit(None, dtype=pl.Utf8).alias("housenumber"),
         pl.lit(None, dtype=pl.Utf8).alias("postcode"),
         pl.lit(None, dtype=pl.Utf8).alias("city"),
-        pl.lit(None, dtype=pl.Int64).alias("city_id"),
 
         pl.col("lat"),
         pl.col("lon"),
 
-        pl.col("is_city"),
-        pl.lit(False).alias("is_street"),
-        pl.lit(False).alias("is_place"),
+        pl.lit(1, dtype=pl.Int8).alias("is_city"),
+        pl.lit(0, dtype=pl.Int8).alias("is_street"),
+        pl.lit(0, dtype=pl.Int8).alias("is_place"),
     ])
 
     streets_norm = streets.select([
@@ -27,19 +26,18 @@ def build_merged_dataset(cities, streets, addresses):
         pl.lit("street").alias("source_type"),
         pl.col("id").alias("source_id"),
 
-        pl.col("name"),
+        pl.lit(None, dtype=pl.Utf8).alias("name"),
         pl.col("name").alias("street"),
         pl.lit(None, dtype=pl.Utf8).alias("housenumber"),
         pl.lit(None, dtype=pl.Utf8).alias("postcode"),
         pl.lit(None, dtype=pl.Utf8).alias("city"),
-        pl.col("city_id"),
 
         pl.col("lat"),
         pl.col("lon"),
 
-        pl.lit(False).alias("is_city"),
-        pl.col("is_street"),
-        pl.lit(False).alias("is_place"),
+        pl.lit(0, dtype=pl.Int8).alias("is_city"),
+        pl.lit(1, dtype=pl.Int8).alias("is_street"),
+        pl.lit(0, dtype=pl.Int8).alias("is_place"),
     ])
 
     addresses_norm = addresses.select([
@@ -52,14 +50,13 @@ def build_merged_dataset(cities, streets, addresses):
         pl.col("housenumber"),
         pl.col("postcode"),
         pl.col("city"),
-        pl.lit(None, dtype=pl.Int64).alias("city_id"),
 
         pl.col("lat"),
         pl.col("lon"),
 
-        pl.lit(False).alias("is_city"),
-        pl.lit(False).alias("is_street"),
-        pl.col("is_place"),
+        pl.lit(0, dtype=pl.Int8).alias("is_city"),
+        pl.lit(0, dtype=pl.Int8).alias("is_street"),
+        pl.lit(1, dtype=pl.Int8).alias("is_place"),
     ])
 
     return pl.concat(
@@ -68,16 +65,5 @@ def build_merged_dataset(cities, streets, addresses):
         rechunk=True,
     )
 
-
-def drop_city_id(df: pl.DataFrame) -> pl.DataFrame:
-    if "city_id" in df.columns:
-        return df.drop("city_id")
-    return df
-
-
-def add_geo_point(df: pl.DataFrame) -> pl.DataFrame:
-    return df.with_columns(
-        pl.struct(["lat", "lon"]).alias("location")
-    )
 
 

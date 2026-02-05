@@ -29,7 +29,7 @@ def parse_es_hits(hits):
 
     for hit in hits:
         # keep prints
-        print_explanation(hit)
+        #print_explanation(hit)
 
         item = build_result_item(hit)
         results.append(item)

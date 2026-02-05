@@ -25,5 +25,5 @@ def clean_streets(df: pl.DataFrame) -> pl.DataFrame:
 
 def add_is_street(streets: pl.DataFrame) -> pl.DataFrame:
     return streets.with_columns(
-        pl.lit(True).alias("is_street")
+        pl.lit(1).alias("is_street")
     )

@@ -9,7 +9,9 @@ We perform high-level preparation tasks to make the data "search-ready":
 - **Feature Engineering**: Creating calculated columns for search and display.
     - `display_address`: A comma-separated string for user-friendly display.
     - `merged_address`: A space-separated string containing all address components, used for "search as you type" functionality.
-- **Final Filtering**: Last-minute data validation.
+- **Data Normalization**:
+    - **Flag Casting**: Converting all boolean flags to `Int8` for compatibility.
+    - **Redundancy Removal**: Nulling the `name` field for street records (where the name is already in the `street` field).
 
 ## Why it's important
 - **Consistency**: Ensures that regardless of the source (city, street, or address), the user sees a consistent presentation.
@@ -22,4 +24,6 @@ This module contains functions that operate on the final Polars DataFrame to add
 - `add_country_columns`: Adds `country_code` (DE) and `country_name` (Germany).
 - `add_display_address`: Creates the `display_address` column for UI display.
 - `add_merged_address`: Creates the `merged_address` column for the "search as you type" feature.
-- `add_is_full_address`: Adds a boolean flag indicating if all core address components are present.
+- `add_is_full_address`: Adds a flag indicating if all core address components are present.
+- `cast_is_flags_to_int`: Casts `is_city`, `is_street`, `is_place`, and `is_full_address` to `Int8`.
+- `null_name_for_streets`: Sets the `name` field to `None` for street records to avoid display redundancy.

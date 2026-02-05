@@ -24,5 +24,5 @@ def clean_cities(df: pl.DataFrame) -> pl.DataFrame:
 
 def add_is_city(cities: pl.DataFrame) -> pl.DataFrame:
     return cities.with_columns(
-        pl.lit(True).alias("is_city")
+        pl.lit(1).alias("is_city")
     )
