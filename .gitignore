@@ -1,8 +1,7 @@
 # Ignore all data files
 data/*
 
-# Except for the folder structure itself (if you want to keep it)
-!data/.gitkeep
+
 
 # Ignore python cache and environment files
 __pycache__/
