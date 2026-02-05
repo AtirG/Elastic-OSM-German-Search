@@ -1,11 +1,21 @@
 # Data Cleaning & Normalization
 
-This directory contains domain-specific cleaning logic and documentation.
+This directory contains domain-specific cleaning logic and documentation. The cleaning process follows a strict order to ensure data integrity and consistent indexing.
 
-## Cleaning Domains
+---
 
-- [Cities](cities/README.md): Cleaning rules for city nodes.
-- [Streets](streets/README.md): Cleaning rules for street ways.
-- [Addresses](addresses/README.md): Cleaning rules for house/building addresses.
+## Cleaning Order
 
-New domains should be added as subdirectories with their own `README.md` and cleaning scripts.
+The cleaning scripts should be executed in the following order:
+
+1.  **[Addresses](addresses/README.md)**: Normalizes house numbers (splitting lists, expanding ranges) and filters invalid coordinates.
+2.  **[Cities](cities/README.md)**: Filters city names and validates coordinates.
+3.  **[Streets](streets/README.md)**: Cleans street names and validates geometry for indexing.
+
+---
+
+## Structure
+
+Each domain is organized as a subdirectory containing:
+- A dedicated `README.md` describing its specific cleaning rules and functions.
+- A cleaning script that is called by the main pipeline.

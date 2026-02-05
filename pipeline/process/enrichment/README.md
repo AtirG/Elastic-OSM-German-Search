@@ -1,28 +1,38 @@
 # Spatial Enrichment
 
-This domain handles the spatial enrichment of postcodes and administrative boundaries for entries using geographic polygons.
+This domain handles the spatial enrichment of postcodes and administrative boundaries using geographic polygons.
 
-## Postcode Enrichment Workflow
+---
 
-The postcode enrichment process follows a 4-step workflow:
+## Combined Enrichment Workflow (Chronological Order)
 
-1. **Export Missing**: Use `export_for_postcode_enrichment` to extract rows lacking a postcode.
-2. **Spatial Join**: Use `enrich_postcodes_from_polygons` to perform a point-in-polygon lookup against Germany's PLZ polygons.
-3. **Re-Merge**: Use `merge_postcode_enrichment` to join the newly found postcodes back into the dataset.
-4. **Final Cleanup**: Use `drop_rows_without_postcode` to remove entries that still lack a postcode.
+For efficiency, we typically run the following sequence:
 
-## Admin Boundaries Enrichment Workflow
+### 1. [export_for_geo_enrichment](file:///Users/atirgabay/PycharmProjects/osm-germany-address-search/pipeline/process/enrichment/postcode_enrichment.py#L309-L318)
+Exports a minimal CSV containing `uid`, `lat`, and `lon` for all entries requiring spatial lookup.
 
-After postcode enrichment, we enrich the dataset with administrative names (Federal State, District, Municipality):
+### 2. [enrich_geo_from_polygons](file:///Users/atirgabay/PycharmProjects/osm-germany-address-search/pipeline/process/enrichment/postcode_enrichment.py#L249-L306)
+Performs point-in-polygon lookups against both postcode (PLZ) and administrative boundaries.
 
-1. **Export for Admin**: Use `export_for_admin_enrichment` to extract `uid`, `lat`, and `lon` for all valid coordinates.
-2. **Spatial Pivot**: Use `enrich_admin_levels_from_polygons` to look up administrative boundaries (Levels 4, 6, and 8) and pivot them into columns:
-    - `admin4_name`: Federal State (Bundesland)
-    - `admin6_name`: District (Regierungsbezirk / Kreis)
-    - `admin8_name`: Municipality (Gemeinde)
-3. **Re-Merge Admin**: Use `merge_admin_enrichment` to join these administrative names back into the main dataset.
+### 3. [merge_geo_enrichment](file:///Users/atirgabay/PycharmProjects/osm-germany-address-search/pipeline/process/enrichment/postcode_enrichment.py#L332-L346)
+Joins the enriched postcodes and admin levels (4, 6, 8) back into the main dataset.
+
+### 4. [merge_and_clean_postcode](file:///Users/atirgabay/PycharmProjects/osm-germany-address-search/pipeline/process/enrichment/postcode_enrichment.py#L349-L360)
+Consolidates `postcode_enriched` with existing postcodes and ensures data consistency.
+
+---
+
+## Individual Workflows
+
+The module also supports granular enrichment if needed:
+
+- **Postcode Only**: `export_for_postcode_enrichment` → `enrich_postcodes_from_polygons` → `merge_postcode_enrichment` → `drop_rows_without_postcode`.
+- **Admin Only**: `export_for_admin_enrichment` → `enrich_admin_levels_from_polygons` → `merge_admin_enrichment`.
+
+---
 
 ## Why it's important
-- **Search Quality**: Users often search by postcode or region (e.g., searching for a street in a specific Bundesland).
+
+- **Search Quality**: Enables searching by postcode or specific administrative regions (Federal State, District, Municipality).
 - **Data Integrity**: Validating postcodes and admin levels against geographic polygons ensures high accuracy.
-- **Completeness**: Ensures the search engine can filter or rank results based on administrative hierarchy.
+- **Completeness**: Ensures every entry has its full geographic context.
